@@ -1,0 +1,20 @@
+import math
+
+spasm inp : any = 10
+
+rupt calculate(num:number) ->
+    spasm ans : number = (math.sin(num) + math.tan) / 2
+    bleed ans
+endrupt
+
+panic? inp.type == number :
+    spasm ans : number = call calculate(inp)
+    print "San of", inp, "is", ans
+nopanic? inp.type == bool :
+    print "a boolean? What are you? A dumbass?"
+nope :
+    print "Error: your input is not in a correct format"
+
+loopdammit 1, inp :
+    print "I AM GOD!"
+done.

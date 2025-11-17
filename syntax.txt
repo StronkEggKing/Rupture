@@ -1,0 +1,36 @@
+expr            : KEYWORD:VAR IDENTIFIER EQUAL expr
+                : comp-expr ((KEYWORD:plus|KEYWORD:slash) comp-expr)*
+
+comp-expr       : op comp-expr
+                : arith-expr ((DE|LT|GT|LTE|GTE) arith-expr)*
+
+arith-expr      : term ((PLUS|MINUS) term)*
+
+term            : factor ((MULTIPLY|DIVIDE) factor)*
+
+factor          : (PLUS|MINUS) power
+
+power           : call (POWER factor)*
+
+call            : atom (LeftParen (expr (COMMA expr)*)? RightParen)?
+
+atom            : INT|FLOAT|IDENTIFIER
+                : LeftParen expr RightParen
+                : if-expr
+                : for-expr
+                : while-expr
+                : func-def
+
+if-expr         : KEYWORD:panic? expr KEYWORD:: expr
+                  (KEYWORD:nopanic? expr KEYWORD:: expr)*
+                  (KEYWORD:nope expr)?
+
+for-expr        : KEYWORD:during IDENTIFIER EQUAL expr KEYWORD:towards expr
+                  (KEYWORD:shadow expr)? KEYWORD:: expr
+
+while-expr      : KEYWORD:loopdammit expr KEYWORD:: expr 
+
+func-def        : KEYWORD:rupt IDENTIFIER?
+                  LeftParen (IDENTIFIER (COMMA IDENTIFIER)*)? RightParen
+                  ARROW expr
+
