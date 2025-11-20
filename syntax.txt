@@ -14,7 +14,7 @@ power           : call (POWER factor)*
 
 call            : atom (LeftParen (expr (COMMA expr)*)? RightParen)?
 
-atom            : INT|FLOAT|IDENTIFIER
+atom            : INT|FLOAT|STRING|IDENTIFIER
                 : LeftParen expr RightParen
                 : if-expr
                 : for-expr

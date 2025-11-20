@@ -102,6 +102,7 @@ class Position :
 
 TT_INT = 'INT'
 TT_FLOAT = 'FLOAT'
+TT_STRING = 'STRING'
 TT_IDENTIFIER = 'IDENTIFIER'
 TT_KEYWORD = 'KEYWORD'
 TT_PLUS = 'PLUS'
@@ -142,13 +143,15 @@ class Token :
     def __init__(self, type_, value=None, PosStart=None, PosEnd=None) :
         self.type = type_
         self.value = value
+        self.PosStart = None
+        self.PosEnd = None
 
-        if PosStart :
+        if PosStart is not None :
             self.PosStart = PosStart.copy()
             self.PosEnd = PosStart.copy()
             self.PosEnd.advance()
 
-        if PosEnd :
+        if PosEnd is not None :
             self.PosEnd = PosEnd.copy()
     
     def matches(self, type_, value) :
@@ -263,6 +266,32 @@ class Lexer :
             token_type = TT_ARROW
 
         return Token(token_type, PosStart=PosStart, PosEnd=self.pos)
+
+    def MakeString(self) :
+        string = ''
+        PosStart = self.pos.copy()
+        EscapeChar = False
+        self.advance()
+
+        EscapeChars = {
+            'n' : '\n',
+            't' : '\t'
+        }
+
+        while self.CurrentChar != None and (self.CurrentChar != '"' or EscapeChar == True) :
+            if EscapeChar == True :
+                string += EscapeChars.get(self.CurrentChar, self.CurrentChar)
+            else :
+                if self.CurrentChar == '\\' :
+                    EscapeChar = True
+                else :
+                    string += self.CurrentChar
+            self.advance()
+            EscapeChar = False
+
+        self.advance()
+
+        return Token(TT_STRING, string, PosStart, self.pos)
     
     def MakeToken(self) :
         tokens = []
@@ -308,6 +337,8 @@ class Lexer :
             elif self.CurrentChar == ',' :
                 tokens.append(Token(TT_COMMA, PosStart=self.pos))
                 self.advance()
+            elif self.CurrentChar == '"' :
+                tokens.append(self.MakeString())
             elif self.CurrentChar in LETTERS :
                 tokens.append(self.MakeIdentifier())
             else :
@@ -325,6 +356,15 @@ class Lexer :
 ############
 
 class NumberNode :
+    def __init__(self, token) :
+        self.token = token
+        self.PosStart = self.token.PosStart
+        self.PosEnd = self.token.PosEnd
+
+    def __repr__(self) :
+        return f'{self.token}'
+
+class StringNode :
     def __init__(self, token) :
         self.token = token
         self.PosStart = self.token.PosStart
@@ -770,6 +810,10 @@ class Parser :
             res.RegisterAdvancement()
             self.advance()
             return res.success(NumberNode(token))
+        elif token.type == TT_STRING :
+            res.RegisterAdvancement()
+            self.advance()
+            return res.success(StringNode(token))
         elif token.type == TT_IDENTIFIER :
             res.RegisterAdvancement()
             self.advance()
@@ -1119,6 +1163,35 @@ class Number(Value) :
     def __repr__(self) :
         return str(self.value)
 
+class String(Value) :
+    def __init__(self, value) :
+        super().__init__()
+        self.value = value
+
+    # match the Value API (lowercase method names)
+    def addition(self, other) :
+        if isinstance(other, String) :
+            return String(self.value + other.value).set_context(self.context), None
+        return None, self.IllegalOperation(other)
+
+    def multiplication(self, other) :
+        # allow "a" * 3
+        if isinstance(other, Number) :
+            return String(self.value * int(other.value)).set_context(self.context), None
+        return None, self.IllegalOperation(other)
+
+    def is_true(self) :
+        return len(self.value) > 0
+
+    def copy(self) :
+        copy = String(self.value)
+        copy.set_pos(self.PosStart, self.PosEnd)
+        copy.set_context(self.context)
+        return copy
+
+    def __repr__(self) :
+        return f'"{self.value}"'
+
 class Function(Value) :
     def __init__(self, name, BodyNode, ArgNames) :
         super().__init__()
@@ -1220,6 +1293,9 @@ class Interpreter :
         number = Number(node.token.value).set_context(context).set_pos(node.PosStart, node.PosEnd)
         return RTResults().success(number)
 
+    def visit_StringNode(self, node, context) :
+        return RTResults().success(String(node.token.value).set_context(context).set_pos(node.PosStart, node.PosEnd))
+
     def visit_VarAccessNode(self, node, context) :
         res=RTResults()
         VarName = node.VarNameToken.value
@@ -1252,9 +1328,6 @@ class Interpreter :
 
         right = res.register(self.visit(node.RNode, context))
         if res.error : return res
-
-        if not isinstance(left, Number) or not isinstance(right, Number):
-            return res.failure(Runtime(node.PosStart, node.PosEnd, "Runtime: operands must be numbers"))
 
         error = None
         result = None
@@ -1291,6 +1364,7 @@ class Interpreter :
         if error :
             return res.failure(error)
         return res.success(result.set_pos(node.PosStart, node.PosEnd))
+
 
     def visit_UnaryOperationNode(self, node, context) :
         res = RTResults()
