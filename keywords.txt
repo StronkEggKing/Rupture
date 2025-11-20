@@ -1,0 +1,71 @@
+#########
+##TYPES##
+#########
+
+"idfk": lets the value be any type
+
+"stress": to make strings
+
+"nodeci?": integer (int)
+
+"deci?": float
+
+"buzz": boolean
+
+#################
+##MAIN KEYWORDS##
+#################
+
+"spasm": creates a variable. variables need to be made in the format "spasm name : type = value"
+
+"rupt": start function
+
+"endrupt": end function
+
+"yank": import a file
+
+"slam": write on another file
+
+"import": import libraries
+
+"export": export libraries when done with them
+
+"panic?": if
+
+"nopanic?": elseif / elif
+
+"nope": else
+
+"loopdammit": start while loop
+
+"done.": end while loop
+
+"during": start for loop
+
+"towards": to
+
+"shadow": step
+
+":": then
+
+"since": end for loop
+
+"bleed": return
+
+"print": print (DUH!)
+
+"plus": and
+
+"op": not
+
+"slash": or
+
+"const": makes a constant variable
+
+"crunch": inline Assembly
+
+"fksys": inline Bash/cmd commands
+
+"trap": crashes the process
+
+"waittrap": wait
